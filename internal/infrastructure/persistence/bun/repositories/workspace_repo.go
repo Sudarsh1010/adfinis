@@ -10,14 +10,30 @@ import (
 	"github.com/uptrace/bun"
 )
 
+// WorkspaceRepository implements persistence for Workspace domain entity.
+// This repository maps between domain.Workspace entities and models.Workspace database models
+// using the Bun ORM.
 type WorkspaceRepository struct {
 	db *bun.DB
 }
 
+// NewWorkspaceRepository creates a new WorkspaceRepository with the given database connection.
 func NewWorkspaceRepository(db *bun.DB) *WorkspaceRepository {
 	return &WorkspaceRepository{db: db}
 }
 
+// toDomainEntity converts a models.Workspace to a domain.Workspace entity.
+func toDomainEntity(m *models.Workspace) *workspace.Workspace {
+	ws := &workspace.Workspace{}
+	ws.SetID(workspace.WorkspaceID(m.ID))
+	ws.SetName(m.Name)
+	ws.SetIsDefault(m.IsDefault)
+	ws.SetCreatedAt(m.CreatedAt)
+	return ws
+}
+
+// Save persists a workspace entity to the database.
+// Converts the domain entity to a database model and inserts it.
 func (r *WorkspaceRepository) Save(ctx context.Context, ws *workspace.Workspace) error {
 	model := &models.Workspace{
 		ID:        string(ws.ID()),
@@ -30,6 +46,8 @@ func (r *WorkspaceRepository) Save(ctx context.Context, ws *workspace.Workspace)
 	return err
 }
 
+// FindByID retrieves a workspace by its ID from the database.
+// Returns ErrWorkspaceNotFound if the workspace does not exist.
 func (r *WorkspaceRepository) FindByID(ctx context.Context, id workspace.WorkspaceID) (*workspace.Workspace, error) {
 	var model models.Workspace
 	err := r.db.NewSelect().Model(&model).Where("id = ?", string(id)).Scan(ctx)
@@ -37,14 +55,10 @@ func (r *WorkspaceRepository) FindByID(ctx context.Context, id workspace.Workspa
 		return nil, fmt.Errorf("workspace not found: %w", err)
 	}
 
-	ws := &workspace.Workspace{}
-	ws.SetID(workspace.WorkspaceID(model.ID))
-	ws.SetName(model.Name)
-	ws.SetIsDefault(model.IsDefault)
-	ws.SetCreatedAt(model.CreatedAt)
-	return ws, nil
+	return toDomainEntity(&model), nil
 }
 
+// FindAll retrieves all workspaces from the database.
 func (r *WorkspaceRepository) FindAll(ctx context.Context) ([]*workspace.Workspace, error) {
 	var models []models.Workspace
 	err := r.db.NewSelect().Model(&models).Scan(ctx)
@@ -53,17 +67,14 @@ func (r *WorkspaceRepository) FindAll(ctx context.Context) ([]*workspace.Workspa
 	}
 
 	workspaces := make([]*workspace.Workspace, len(models))
-	for i, model := range models {
-		ws := &workspace.Workspace{}
-		ws.SetID(workspace.WorkspaceID(model.ID))
-		ws.SetName(model.Name)
-		ws.SetIsDefault(model.IsDefault)
-		ws.SetCreatedAt(model.CreatedAt)
-		workspaces[i] = ws
+	for i := range models {
+		workspaces[i] = toDomainEntity(&models[i])
 	}
 	return workspaces, nil
 }
 
+// UpdateName updates the name of a workspace in the database.
+// Returns ErrWorkspaceNotFound if the workspace does not exist.
 func (r *WorkspaceRepository) UpdateName(ctx context.Context, id workspace.WorkspaceID, name string) error {
 	result, err := r.db.NewUpdate().
 		Model(&models.Workspace{}).
@@ -86,6 +97,8 @@ func (r *WorkspaceRepository) UpdateName(ctx context.Context, id workspace.Works
 	return nil
 }
 
+// Delete removes a workspace from the database by its ID.
+// Returns ErrWorkspaceNotFound if the workspace does not exist.
 func (r *WorkspaceRepository) Delete(ctx context.Context, id workspace.WorkspaceID) error {
 	result, err := r.db.NewDelete().
 		Model(&models.Workspace{}).

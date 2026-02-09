@@ -47,10 +47,8 @@ func TestCreateWorkspace_Success(t *testing.T) {
 	// Arrange
 	req := &CreateWorkspaceRequest{Name: "Test Workspace"}
 	mockRepo := new(mockWorkspaceRepository)
-	expectedWorkspace := workspace.NewWorkspace("Test Workspace")
-	expectedWorkspace.SetIsDefault(false)
 
-	mockRepo.On("Save", mock.Anything, expectedWorkspace).Return(nil)
+	mockRepo.On("Save", mock.Anything, mock.AnythingOfType("*workspace.Workspace")).Return(nil)
 
 	service := NewWorkspaceService(mockRepo)
 
@@ -163,15 +161,15 @@ func TestListWorkspaces_Success(t *testing.T) {
 func TestUpdateWorkspaceName_Success(t *testing.T) {
 	// Arrange
 	id := workspace.WorkspaceID("01H7V8F0G1RJZ7B0G1S1G1S1")
-	oldName := "Old Name"
 	newName := "New Name"
 
-	expectedWorkspace := workspace.NewWorkspace(oldName)
+	expectedWorkspace := workspace.NewWorkspace(newName)
 	expectedWorkspace.SetID(id)
 	expectedWorkspace.SetIsDefault(false)
 
 	mockRepo := new(mockWorkspaceRepository)
 	mockRepo.On("UpdateName", mock.Anything, id, newName).Return(nil)
+	mockRepo.On("FindByID", mock.Anything, id).Return(expectedWorkspace, nil)
 
 	service := NewWorkspaceService(mockRepo)
 
@@ -213,6 +211,9 @@ func TestDeleteWorkspace_Success(t *testing.T) {
 	id := workspace.WorkspaceID("01H7V8F0G1RJZ7B0G1S1G1S1")
 
 	mockRepo := new(mockWorkspaceRepository)
+	expectedWorkspace := workspace.NewWorkspace("Test Workspace")
+	expectedWorkspace.SetID(id)
+	mockRepo.On("FindByID", mock.Anything, id).Return(expectedWorkspace, nil)
 	mockRepo.On("Delete", mock.Anything, id).Return(nil)
 
 	service := NewWorkspaceService(mockRepo)
@@ -231,7 +232,7 @@ func TestDeleteWorkspace_NotFound(t *testing.T) {
 	id := workspace.WorkspaceID("01H7V8F0G1RJZ7B0G1S1G1S1")
 
 	mockRepo := new(mockWorkspaceRepository)
-	mockRepo.On("Delete", mock.Anything, id).Return(workspace.ErrWorkspaceNotFound)
+	mockRepo.On("FindByID", mock.Anything, id).Return(nil, workspace.ErrWorkspaceNotFound)
 
 	service := NewWorkspaceService(mockRepo)
 

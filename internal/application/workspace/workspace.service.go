@@ -45,3 +45,108 @@ func NewWorkspaceService(repo WorkspaceRepository) WorkspaceService {
 		repo: repo,
 	}
 }
+
+// CreateWorkspace creates a new workspace with validation.
+func (s *workspaceService) CreateWorkspace(ctx context.Context, req *CreateWorkspaceRequest) (*WorkspaceResponse, error) {
+	if req.Name == "" {
+		return nil, workspace.ErrInvalidName
+	}
+
+	entity := workspace.NewWorkspace(req.Name)
+	entity.SetIsDefault(false)
+
+	err := s.repo.Save(ctx, entity)
+	if err != nil {
+		return nil, err
+	}
+
+	return &WorkspaceResponse{
+		ID:        string(entity.ID()),
+		Name:      entity.Name(),
+		IsDefault: entity.IsDefault(),
+		CreatedAt: entity.CreatedAt(),
+	}, nil
+}
+
+// GetWorkspaceByID retrieves a workspace by its unique identifier.
+func (s *workspaceService) GetWorkspaceByID(ctx context.Context, id workspace.WorkspaceID) (*WorkspaceResponse, error) {
+	entity, err := s.repo.FindByID(ctx, id)
+	if entity == nil {
+		return nil, workspace.ErrWorkspaceNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &WorkspaceResponse{
+		ID:        string(entity.ID()),
+		Name:      entity.Name(),
+		IsDefault: entity.IsDefault(),
+		CreatedAt: entity.CreatedAt(),
+	}, nil
+}
+
+// ListWorkspaces retrieves all workspaces.
+func (s *workspaceService) ListWorkspaces(ctx context.Context) ([]*WorkspaceResponse, error) {
+	entities, err := s.repo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]*WorkspaceResponse, 0, len(entities))
+	for _, entity := range entities {
+		responses = append(responses, &WorkspaceResponse{
+			ID:        string(entity.ID()),
+			Name:      entity.Name(),
+			IsDefault: entity.IsDefault(),
+			CreatedAt: entity.CreatedAt(),
+		})
+	}
+
+	return responses, nil
+}
+
+// UpdateWorkspaceName changes the name of an existing workspace.
+func (s *workspaceService) UpdateWorkspaceName(ctx context.Context, id workspace.WorkspaceID, newName string) (*WorkspaceResponse, error) {
+	if newName == "" {
+		return nil, workspace.ErrInvalidName
+	}
+
+	err := s.repo.UpdateName(ctx, id, newName)
+	if err != nil {
+		return nil, err
+	}
+
+	entity, err := s.repo.FindByID(ctx, id)
+	if entity == nil {
+		return nil, workspace.ErrWorkspaceNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &WorkspaceResponse{
+		ID:        string(entity.ID()),
+		Name:      entity.Name(),
+		IsDefault: entity.IsDefault(),
+		CreatedAt: entity.CreatedAt(),
+	}, nil
+}
+
+// DeleteWorkspace removes a workspace from the data store.
+func (s *workspaceService) DeleteWorkspace(ctx context.Context, id workspace.WorkspaceID) error {
+	entity, err := s.repo.FindByID(ctx, id)
+	if entity == nil {
+		return workspace.ErrWorkspaceNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
