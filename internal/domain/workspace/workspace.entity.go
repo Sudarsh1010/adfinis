@@ -58,3 +58,19 @@ func (w *Workspace) Rename(newName string) error {
 	w.name = newName
 	return nil
 }
+
+func (w *Workspace) SetID(id WorkspaceID) {
+	w.id = id
+}
+
+func (w *Workspace) SetName(name string) {
+	w.name = name
+}
+
+func (w *Workspace) SetIsDefault(isDefault bool) {
+	w.isDefault = isDefault
+}
+
+func (w *Workspace) SetCreatedAt(createdAt time.Time) {
+	w.createdAt = createdAt
+}

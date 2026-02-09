@@ -37,11 +37,72 @@ func (r *WorkspaceRepository) FindByID(ctx context.Context, id workspace.Workspa
 		return nil, fmt.Errorf("workspace not found: %w", err)
 	}
 
-	// Map Bun model → domain entity
-	return &workspace.Workspace{
-		id:        workspace.WorkspaceID(model.ID),
-		name:      model.Name,
-		isDefault: model.IsDefault,
-		createdAt: model.CreatedAt,
-	}, nil
+	ws := &workspace.Workspace{}
+	ws.SetID(workspace.WorkspaceID(model.ID))
+	ws.SetName(model.Name)
+	ws.SetIsDefault(model.IsDefault)
+	ws.SetCreatedAt(model.CreatedAt)
+	return ws, nil
+}
+
+func (r *WorkspaceRepository) FindAll(ctx context.Context) ([]*workspace.Workspace, error) {
+	var models []models.Workspace
+	err := r.db.NewSelect().Model(&models).Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find all workspaces: %w", err)
+	}
+
+	workspaces := make([]*workspace.Workspace, len(models))
+	for i, model := range models {
+		ws := &workspace.Workspace{}
+		ws.SetID(workspace.WorkspaceID(model.ID))
+		ws.SetName(model.Name)
+		ws.SetIsDefault(model.IsDefault)
+		ws.SetCreatedAt(model.CreatedAt)
+		workspaces[i] = ws
+	}
+	return workspaces, nil
+}
+
+func (r *WorkspaceRepository) UpdateName(ctx context.Context, id workspace.WorkspaceID, name string) error {
+	result, err := r.db.NewUpdate().
+		Model(&models.Workspace{}).
+		Set("name = ?", name).
+		Where("id = ?", string(id)).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update workspace name: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return workspace.ErrWorkspaceNotFound
+	}
+
+	return nil
+}
+
+func (r *WorkspaceRepository) Delete(ctx context.Context, id workspace.WorkspaceID) error {
+	result, err := r.db.NewDelete().
+		Model(&models.Workspace{}).
+		Where("id = ?", string(id)).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete workspace: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return workspace.ErrWorkspaceNotFound
+	}
+
+	return nil
 }
