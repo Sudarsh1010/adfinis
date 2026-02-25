@@ -8,6 +8,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	"github.com/uptrace/bun/driver/sqliteshim"
+	"go.uber.org/zap"
 )
 
 type Database struct {
@@ -17,10 +18,9 @@ type Database struct {
 func NewDatabase(
 	ctx context.Context,
 	cfg *Config,
-	logger *Logger,
+	logger *zap.Logger,
 ) (*Database, error) {
-	logger.Info("Initializing database", "path", cfg.DBPath)
-
+	logger.Info("Initializing database", zap.String("path", cfg.DBPath))
 	var err error
 
 	sqldb, err := sql.Open(sqliteshim.ShimName, cfg.DBPath)
@@ -48,6 +48,7 @@ func NewDatabase(
 	}
 
 	logger.Info("Database initialized successfully")
+
 	return &Database{db}, nil
 }
 

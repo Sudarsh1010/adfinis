@@ -5,6 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
@@ -22,24 +23,20 @@ const (
 )
 
 type Config struct {
-	Port      int
-	Env       string
-	DBPath    string
-	LogLevel  string
-	LogFormat string
+	Port   int
+	Env    string
+	DBPath string
 }
 
-func NewConfig(logger *Logger) (*Config, error) {
+func NewConfig(log *zap.Logger) (*Config, error) {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		logger.Infoln("No .env file found, using environment variables")
+		log.Info("No .env file found, using environment variables")
 	}
 
 	viper.SetDefault("PORT", HTTPDefaultPort)
 	viper.SetDefault("ENV", "development")
 	viper.SetDefault("DB_PATH", "./adfinis.db")
-	viper.SetDefault("LOG_LEVEL", "info")
-	viper.SetDefault("LOG_FORMAT", "console")
 
 	viper.AutomaticEnv()
 
@@ -49,10 +46,9 @@ func NewConfig(logger *Logger) (*Config, error) {
 	}
 
 	return &Config{
-		Port:      port,
-		Env:       viper.GetString("ENV"),
-		DBPath:    viper.GetString("DB_PATH"),
-		LogLevel:  viper.GetString("LOG_LEVEL"),
-		LogFormat: viper.GetString("LOG_FORMAT"),
+		Port:   port,
+		Env:    viper.GetString("ENV"),
+		DBPath: viper.GetString("DB_PATH"),
 	}, nil
 }
+

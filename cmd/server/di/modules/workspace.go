@@ -1,9 +1,9 @@
+// Package modules ...
 package modules
 
 import (
 	"github.com/sudarsh1010/adfinis/internal/application/workspace"
 	"github.com/sudarsh1010/adfinis/internal/infrastructure/persistence/bun/repositories"
-
 	"go.uber.org/fx"
 )
 

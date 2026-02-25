@@ -2,6 +2,7 @@ package di
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -9,13 +10,15 @@ import (
 	"github.com/sudarsh1010/adfinis/internal/interface/http/handlers"
 	"github.com/sudarsh1010/adfinis/internal/interface/http/response"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type RouterParams struct {
 	fx.In
 
 	HealthHandler *handlers.HealthHandler
-	Logger        *Logger
+	SPAHandler    *handlers.SPAHandler
+	Logger        *zap.Logger
 	// WorkspaceHandler  *handlers.WorkspaceHandler
 	// ConnectionHandler *handlers.ConnectionHandler
 }
@@ -69,9 +72,13 @@ func NewRouter(p RouterParams) *chi.Mux {
 		// 	})
 	})
 
-	// Catch-all: Return 404 for unknown routes
-	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
-		response.NotFound(w, "Route not found")
+	// SPA routing: Serve frontend for non-API routes, 404 for unknown API routes
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			response.NotFound(w, "Route not found")
+			return
+		}
+		p.SPAHandler.ServeHTTP(w, r)
 	})
 
 	return r

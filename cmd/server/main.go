@@ -26,7 +26,7 @@ func main() {
 		fx.Invoke(func(
 			lifecycle fx.Lifecycle,
 			server *di.Server,
-			logger *di.Logger,
+			logger *zap.Logger,
 		) {
 			lifecycle.Append(fx.Hook{
 				OnStart: func(_ context.Context) error {

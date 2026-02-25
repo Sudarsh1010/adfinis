@@ -17,6 +17,8 @@ var Module = fx.Options(
 	// fx.Invoke(RunMigrations),
 
 	// HTTP layer
+	fx.Provide(NewStaticFS),
+	fx.Provide(NewSPAHandler),
 	fx.Provide(NewRouter),
 	fx.Provide(NewServer),
 

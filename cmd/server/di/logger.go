@@ -1,17 +1,22 @@
 package di
 
 import (
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-type Logger struct {
-	*zap.SugaredLogger
-}
+func NewLogger() (*zap.Logger, error) {
+	// Set defaults for logger config
+	viper.SetDefault("LOG_LEVEL", "info")
+	viper.SetDefault("LOG_FORMAT", "console")
 
-func NewLogger(cfg *Config) (*Logger, error) {
+	// Bind to environment variables
+	viper.AutomaticEnv()
+
+	// Parse log level
 	var zapLevel zapcore.Level
-	switch cfg.LogLevel {
+	switch viper.GetString("LOG_LEVEL") {
 	case "debug":
 		zapLevel = zap.DebugLevel
 	case "info":
@@ -24,34 +29,14 @@ func NewLogger(cfg *Config) (*Logger, error) {
 		zapLevel = zap.InfoLevel
 	}
 
+	// Build zap config based on format
 	var cfgZap zap.Config
-	if cfg.LogFormat == "json" {
+	if viper.GetString("LOG_FORMAT") == "json" {
 		cfgZap = zap.NewProductionConfig()
 	} else {
 		cfgZap = zap.NewDevelopmentConfig()
 	}
 	cfgZap.Level = zap.NewAtomicLevelAt(zapLevel)
 
-	z, err := cfgZap.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Logger{z.Sugar()}, nil
-}
-
-func (l *Logger) Debug(msg string, fields ...any) {
-	l.With(fields...).Debug(msg)
-}
-
-func (l *Logger) Info(msg string, fields ...any) {
-	l.With(fields...).Info(msg)
-}
-
-func (l *Logger) Warn(msg string, fields ...any) {
-	l.With(fields...).Warn(msg)
-}
-
-func (l *Logger) Error(msg string, fields ...any) {
-	l.With(fields...).Error(msg)
+	return cfgZap.Build()
 }

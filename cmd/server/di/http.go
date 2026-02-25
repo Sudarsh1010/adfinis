@@ -7,18 +7,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type Server struct {
 	server *go_http.Server
-	logger *Logger
+	logger *zap.Logger
 }
 
 type ServerParams struct {
 	fx.In
 
 	Config    *Config
-	Logger    *Logger
+	Logger    *zap.Logger
 	Router    *chi.Mux
 	Lifecycle fx.Lifecycle
 }
@@ -41,10 +42,8 @@ func NewServer(p ServerParams) (*Server, error) {
 		OnStart: func(_ context.Context) error {
 			p.Logger.Info(
 				"Starting HTTP server",
-				"port",
-				p.Config.Port,
-				"env",
-				p.Config.Env,
+				zap.Int("port", p.Config.Port),
+				zap.String("env", p.Config.Env),
 			)
 			return nil
 		},
