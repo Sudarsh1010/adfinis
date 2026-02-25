@@ -6,16 +6,16 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-// WorkspaceID is a ULID wrapper (value object)
-type WorkspaceID string
+// ID is a ULID wrapper (value object).
+type ID string
 
-func NewWorkspaceID() WorkspaceID {
-	return WorkspaceID(ulid.Make().String())
+func NewWorkspaceID() ID {
+	return ID(ulid.Make().String())
 }
 
-// Workspace is a pure domain entity (NO Bun dependencies)
+// Workspace is a pure domain entity (NO Bun dependencies).
 type Workspace struct {
-	id        WorkspaceID
+	id        ID
 	name      string
 	isDefault bool
 	createdAt time.Time
@@ -30,7 +30,7 @@ func NewWorkspace(name string) *Workspace {
 	}
 }
 
-func (w *Workspace) ID() WorkspaceID {
+func (w *Workspace) ID() ID {
 	return w.id
 }
 
@@ -47,6 +47,7 @@ func (w *Workspace) CreatedAt() time.Time {
 }
 
 // Domain behavior
+
 func (w *Workspace) ActivateAsDefault() {
 	w.isDefault = true
 }
@@ -59,7 +60,7 @@ func (w *Workspace) Rename(newName string) error {
 	return nil
 }
 
-func (w *Workspace) SetID(id WorkspaceID) {
+func (w *Workspace) SetID(id ID) {
 	w.id = id
 }
 

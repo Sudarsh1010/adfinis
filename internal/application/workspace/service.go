@@ -6,48 +6,61 @@ import (
 	"github.com/sudarsh1010/adfinis/internal/domain/workspace"
 )
 
-// WorkspaceService defines the application layer contract for workspace operations.
+// Service defines the application layer contract for workspace operations.
 // This service orchestrates business logic and coordinates with the repository layer.
 // It enforces validation rules and transforms domain entities into DTOs.
-type WorkspaceService interface {
+type Service interface {
 	// CreateWorkspace creates a new workspace with validation.
 	// Returns ErrInvalidName if the name is empty.
-	CreateWorkspace(ctx context.Context, req *CreateWorkspaceRequest) (*WorkspaceResponse, error)
+	CreateWorkspace(
+		ctx context.Context,
+		req *CreateWorkspaceRequest,
+	) (*Response, error)
 
 	// GetWorkspaceByID retrieves a workspace by its unique identifier.
 	// Returns ErrWorkspaceNotFound if the workspace does not exist.
-	GetWorkspaceByID(ctx context.Context, id workspace.WorkspaceID) (*WorkspaceResponse, error)
+	GetWorkspaceByID(
+		ctx context.Context,
+		id workspace.ID,
+	) (*Response, error)
 
 	// ListWorkspaces retrieves all workspaces.
 	// Returns an empty list if no workspaces exist.
-	ListWorkspaces(ctx context.Context) ([]*WorkspaceResponse, error)
+	ListWorkspaces(ctx context.Context) ([]*Response, error)
 
 	// UpdateWorkspaceName changes the name of an existing workspace.
 	// Returns ErrInvalidName if the new name is empty.
 	// Returns ErrWorkspaceNotFound if the workspace does not exist.
-	UpdateWorkspaceName(ctx context.Context, id workspace.WorkspaceID, newName string) (*WorkspaceResponse, error)
+	UpdateWorkspaceName(
+		ctx context.Context,
+		id workspace.ID,
+		newName string,
+	) (*Response, error)
 
 	// DeleteWorkspace removes a workspace from the data store.
 	// Returns ErrWorkspaceNotFound if the workspace does not exist.
-	DeleteWorkspace(ctx context.Context, id workspace.WorkspaceID) error
+	DeleteWorkspace(ctx context.Context, id workspace.ID) error
 }
 
 // workspaceService is the concrete implementation of WorkspaceService.
 // It uses WorkspaceRepository for data persistence and transforms between
 // domain entities and DTOs.
 type workspaceService struct {
-	repo WorkspaceRepository
+	repo Repository
 }
 
 // NewWorkspaceService creates a new WorkspaceService instance.
-func NewWorkspaceService(repo WorkspaceRepository) WorkspaceService {
+func NewWorkspaceService(repo Repository) Service {
 	return &workspaceService{
 		repo: repo,
 	}
 }
 
 // CreateWorkspace creates a new workspace with validation.
-func (s *workspaceService) CreateWorkspace(ctx context.Context, req *CreateWorkspaceRequest) (*WorkspaceResponse, error) {
+func (s *workspaceService) CreateWorkspace(
+	ctx context.Context,
+	req *CreateWorkspaceRequest,
+) (*Response, error) {
 	if req.Name == "" {
 		return nil, workspace.ErrInvalidName
 	}
@@ -60,7 +73,7 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, req *CreateWorks
 		return nil, err
 	}
 
-	return &WorkspaceResponse{
+	return &Response{
 		ID:        string(entity.ID()),
 		Name:      entity.Name(),
 		IsDefault: entity.IsDefault(),
@@ -69,7 +82,10 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, req *CreateWorks
 }
 
 // GetWorkspaceByID retrieves a workspace by its unique identifier.
-func (s *workspaceService) GetWorkspaceByID(ctx context.Context, id workspace.WorkspaceID) (*WorkspaceResponse, error) {
+func (s *workspaceService) GetWorkspaceByID(
+	ctx context.Context,
+	id workspace.ID,
+) (*Response, error) {
 	entity, err := s.repo.FindByID(ctx, id)
 	if entity == nil {
 		return nil, workspace.ErrWorkspaceNotFound
@@ -78,7 +94,7 @@ func (s *workspaceService) GetWorkspaceByID(ctx context.Context, id workspace.Wo
 		return nil, err
 	}
 
-	return &WorkspaceResponse{
+	return &Response{
 		ID:        string(entity.ID()),
 		Name:      entity.Name(),
 		IsDefault: entity.IsDefault(),
@@ -87,15 +103,17 @@ func (s *workspaceService) GetWorkspaceByID(ctx context.Context, id workspace.Wo
 }
 
 // ListWorkspaces retrieves all workspaces.
-func (s *workspaceService) ListWorkspaces(ctx context.Context) ([]*WorkspaceResponse, error) {
+func (s *workspaceService) ListWorkspaces(
+	ctx context.Context,
+) ([]*Response, error) {
 	entities, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	responses := make([]*WorkspaceResponse, 0, len(entities))
+	responses := make([]*Response, 0, len(entities))
 	for _, entity := range entities {
-		responses = append(responses, &WorkspaceResponse{
+		responses = append(responses, &Response{
 			ID:        string(entity.ID()),
 			Name:      entity.Name(),
 			IsDefault: entity.IsDefault(),
@@ -107,7 +125,11 @@ func (s *workspaceService) ListWorkspaces(ctx context.Context) ([]*WorkspaceResp
 }
 
 // UpdateWorkspaceName changes the name of an existing workspace.
-func (s *workspaceService) UpdateWorkspaceName(ctx context.Context, id workspace.WorkspaceID, newName string) (*WorkspaceResponse, error) {
+func (s *workspaceService) UpdateWorkspaceName(
+	ctx context.Context,
+	id workspace.ID,
+	newName string,
+) (*Response, error) {
 	if newName == "" {
 		return nil, workspace.ErrInvalidName
 	}
@@ -125,7 +147,7 @@ func (s *workspaceService) UpdateWorkspaceName(ctx context.Context, id workspace
 		return nil, err
 	}
 
-	return &WorkspaceResponse{
+	return &Response{
 		ID:        string(entity.ID()),
 		Name:      entity.Name(),
 		IsDefault: entity.IsDefault(),
@@ -134,7 +156,7 @@ func (s *workspaceService) UpdateWorkspaceName(ctx context.Context, id workspace
 }
 
 // DeleteWorkspace removes a workspace from the data store.
-func (s *workspaceService) DeleteWorkspace(ctx context.Context, id workspace.WorkspaceID) error {
+func (s *workspaceService) DeleteWorkspace(ctx context.Context, id workspace.ID) error {
 	entity, err := s.repo.FindByID(ctx, id)
 	if entity == nil {
 		return workspace.ErrWorkspaceNotFound
