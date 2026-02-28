@@ -14,6 +14,7 @@ var Module = fx.Options(
 	fx.Provide(NewDatabase),
 
 	// Migration
+	fx.Invoke(RunMigrations),
 	// fx.Invoke(RunMigrations),
 
 	// HTTP layer

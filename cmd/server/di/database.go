@@ -35,12 +35,7 @@ func NewDatabase(
 	sqldb.SetConnMaxIdleTime(BunConnMaxIdleTime)
 
 	// Create Bun DB with debug hook in development
-	// var db *bun.DB
-	// if cfg.Env == "development" {
-	// 	db = bun.NewDB(sqldb, &bundebug.QueryHook{})
-	// } else {
 	db := bun.NewDB(sqldb, sqlitedialect.New())
-	// }
 
 	// Test connection
 	if err = db.PingContext(ctx); err != nil {
