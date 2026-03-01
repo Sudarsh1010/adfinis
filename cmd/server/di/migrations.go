@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 // RunMigrations executes all pending database migrations.
-func RunMigrations(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, cfg *Config) {
+func RunMigrations(lc fx.Lifecycle, db *Database, logger *zap.Logger) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Info("Running database migrations...")
@@ -24,7 +23,10 @@ func RunMigrations(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, cfg *Config)
 			// Read migration files
 			entries, err := os.ReadDir(migrationsDir)
 			if err != nil {
-				logger.Warn("Migrations directory not found, skipping migrations", zap.String("path", migrationsDir), zap.Error(err))
+				logger.Warn(
+					"Migrations directory not found, skipping migrations",
+					zap.String("path", migrationsDir), zap.Error(err),
+				)
 				return nil
 			}
 
@@ -37,14 +39,24 @@ func RunMigrations(lc fx.Lifecycle, db *bun.DB, logger *zap.Logger, cfg *Config)
 				filePath := filepath.Join(migrationsDir, entry.Name())
 				content, err := os.ReadFile(filePath)
 				if err != nil {
-					return fmt.Errorf("failed to read migration file %s: %w", entry.Name(), err)
+					return fmt.Errorf(
+						"failed to read migration file %s: %w",
+						entry.Name(),
+						err,
+					)
 				}
 
-				logger.Info("Executing migration", zap.String("file", entry.Name()))
+				logger.Info(
+					"Executing migration",
+					zap.String("file", entry.Name()),
+				)
 
 				_, err = db.ExecContext(ctx, string(content))
 				if err != nil {
-					return fmt.Errorf("failed to execute migration %s: %w", entry.Name(), err)
+					return fmt.Errorf(
+						"failed to execute migration %s: %w",
+						entry.Name(), err,
+					)
 				}
 			}
 

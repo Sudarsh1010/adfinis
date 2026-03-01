@@ -2,7 +2,9 @@
 package di
 
 import (
+	"github.com/sudarsh1010/adfinis/cmd/server/di/modules"
 	"github.com/sudarsh1010/adfinis/internal/interface/http/handlers"
+	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 )
 
@@ -12,6 +14,9 @@ var Module = fx.Options(
 	fx.Provide(NewConfig),
 	fx.Provide(NewLogger),
 	fx.Provide(NewDatabase),
+
+	// Extract *bun.DB from *Database for repositories
+	fx.Provide(func(db *Database) *bun.DB { return db.DB }),
 
 	// Migration
 	fx.Invoke(RunMigrations),
@@ -27,4 +32,16 @@ var Module = fx.Options(
 	fx.Provide(handlers.NewHealthHandler),
 	// fx.Provide(NewWorkspaceHandler),
 	// fx.Provide(NewConnectionHandler),
+
+	// Modules
+	modules.WorkspaceModule,
+	modules.ConnectionModule,
+	modules.DatabaseNamespaceModule,
+	modules.CollectionModule,
+
+	// Handlers
+	fx.Provide(handlers.NewWorkspaceHandler),
+	fx.Provide(handlers.NewConnectionHandler),
+	fx.Provide(handlers.NewDatabaseNamespaceHandler),
+	fx.Provide(handlers.NewCollectionHandler),
 )

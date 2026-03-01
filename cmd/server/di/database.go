@@ -16,10 +16,10 @@ type Database struct {
 }
 
 func NewDatabase(
-	ctx context.Context,
 	cfg *Config,
 	logger *zap.Logger,
 ) (*Database, error) {
+	ctx := context.Background()
 	logger.Info("Initializing database", zap.String("path", cfg.DBPath))
 	var err error
 
