@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
-
 	"github.com/go-chi/chi/v5"
 
 	appconnection "github.com/sudarsh1010/adfinis/internal/application/connection"
@@ -65,8 +65,16 @@ func (h *ConnectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Region:      req.Region,
 	})
 	if err != nil {
-		if req.Name == "" {
-			response.BadRequest(w, "Name cannot be empty")
+		if errors.Is(err, domainconnection.ErrInvalidProvider) {
+			response.BadRequest(w, "Unsupported provider. Only 'milvus' is supported")
+			return
+		}
+		if errors.Is(err, domainconnection.ErrInvalidEndpoint) {
+			response.BadRequest(w, "Invalid endpoint URL")
+			return
+		}
+		if errors.Is(err, domainconnection.ErrConnectionNotFound) {
+			response.NotFound(w, "Connection not found")
 			return
 		}
 		response.InternalError(w, "Failed to create connection")
@@ -86,43 +94,6 @@ func (h *ConnectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		LastConnectedAt: resp.LastConnectedAt,
 	})
 }
-	var req CreateConnectionRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.BadRequest(w, "Invalid request body")
-		return
-	}
-
-	resp, err := h.service.CreateConnection(r.Context(), &appconnection.CreateConnectionRequest{
-		WorkspaceID: req.WorkspaceID,
-		Name:        req.Name,
-		Provider:    req.Provider,
-		Endpoint:    req.Endpoint,
-		APIKey:      req.APIKey,
-		Region:      req.Region,
-	})
-	if err != nil {
-		if req.Name == "" {
-			response.BadRequest(w, "Name cannot be empty")
-			return
-		}
-		response.InternalError(w, "Failed to create connection")
-		return
-	}
-	
-	response.Created(w, ConnectionResponse{
-		ID:              resp.ID,
-		WorkspaceID:     resp.WorkspaceID,
-		Name:            resp.Name,
-		Provider:        resp.Provider,
-		Endpoint:        resp.Endpoint,
-		APIKeyEncrypted: resp.APIKeyEncrypted,
-		Region:          resp.Region,
-		CreatedAt:       resp.CreatedAt,
-		UpdatedAt:       resp.UpdatedAt,
-		LastConnectedAt: resp.LastConnectedAt,
-	})
-}
-
 func (h *ConnectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	workspacesParam := r.URL.Query().Get("workspaceId")
 

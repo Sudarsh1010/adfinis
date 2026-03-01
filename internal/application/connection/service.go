@@ -83,10 +83,16 @@ func (s *connectionService) CreateConnection(
 ) (*GetConnectionResponse, error) {
 	// Validate provider is milvus
 	if req.Provider != "milvus" {
+		return nil, connection.ErrInvalidProvider
+	}
+	if req.Provider != "milvus" {
 		return nil, errors.New("unsupported provider: " + req.Provider)
 	}
 
 	// Validate endpoint is a valid URL
+	if _, err := url.ParseRequestURI(req.Endpoint); err != nil {
+		return nil, connection.ErrInvalidEndpoint
+	}
 	if _, err := url.ParseRequestURI(req.Endpoint); err != nil {
 		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
 	}
