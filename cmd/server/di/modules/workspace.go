@@ -8,6 +8,11 @@ import (
 )
 
 var WorkspaceModule = fx.Module("workspace",
-	fx.Provide(repositories.NewWorkspaceRepository),
+	fx.Provide(
+		fx.Annotate(
+			repositories.NewWorkspaceRepository,
+			fx.As(new(workspace.Repository)),
+		),
+	),
 	fx.Provide(workspace.NewWorkspaceService),
 )
