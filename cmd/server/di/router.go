@@ -16,11 +16,13 @@ import (
 type RouterParams struct {
 	fx.In
 
-	HealthHandler *handlers.HealthHandler
-	SPAHandler    *handlers.SPAHandler
-	Logger        *zap.Logger
-	// WorkspaceHandler  *handlers.WorkspaceHandler
-	// ConnectionHandler *handlers.ConnectionHandler
+	HealthHandler        *handlers.HealthHandler
+	SPAHandler           *handlers.SPAHandler
+	Logger               *zap.Logger
+	DatabaseNamespaceHandler *handlers.DatabaseNamespaceHandler
+	WorkspaceHandler     *handlers.WorkspaceHandler
+	ConnectionHandler    *handlers.ConnectionHandler
+	CollectionHandler    *handlers.CollectionHandler
 }
 
 func NewRouter(p RouterParams) *chi.Mux {
@@ -56,23 +58,34 @@ func NewRouter(p RouterParams) *chi.Mux {
 		// Health check
 		r.Get("/health", p.HealthHandler.Handle)
 
-		// 	// Workspace routes
-		// 	r.Route("/workspaces", func(r chi.Router) {
-		// 		r.Post("/", p.WorkspaceHandler.Create)
-		// 		r.Get("/", p.WorkspaceHandler.List)
-		// 		r.Get("/{id}", p.WorkspaceHandler.Get)
-		// 		r.Put("/{id}/activate", p.WorkspaceHandler.Activate)
-		// 	})
-		//
-		// 	// Connection routes
-		// 	r.Route("/connections", func(r chi.Router) {
-		// 		r.Post("/", p.ConnectionHandler.Create)
-		// 		r.Get("/", p.ConnectionHandler.List)
-		// 		r.Post("/{id}/test", p.ConnectionHandler.Test)
-		// 	})
-	})
+		// Workspace routes
+		// r.Route("/workspaces", func(r chi.Router) {
+		// 	r.Post("/", p.WorkspaceHandler.Create)
+		// 	r.Get("/", p.WorkspaceHandler.List)
+		// 	r.Get("/{id}", p.WorkspaceHandler.Get)
+		// 	r.Put("/{id}/activate", p.WorkspaceHandler.Activate)
+		// })
 
-	// SPA routing: Serve frontend for non-API routes, 404 for unknown API routes
+		// Workspaces
+		r.Post("/workspaces", p.WorkspaceHandler.Create)
+		r.Get("/workspaces", p.WorkspaceHandler.List)
+		r.Get("/workspaces/{id}", p.WorkspaceHandler.Get)
+		r.Delete("/workspaces/{id}", p.WorkspaceHandler.Delete)
+
+		// Workspaces -> Connections
+		r.Post("/workspaces/{workspaceId}/connections", p.ConnectionHandler.Create)
+		r.Get("/workspaces/{workspaceId}/connections", p.ConnectionHandler.List)
+
+		// Connections -> Test
+		r.Post("/connections/{id}/test", p.ConnectionHandler.Test)
+
+		// Connections -> Namespaces
+		r.Post("/connections/{connectionId}/namespaces", p.DatabaseNamespaceHandler.Create)
+		r.Get("/connections/{connectionId}/namespaces", p.DatabaseNamespaceHandler.List)
+
+			// Namespaces -> Collections
+			r.Get("/namespaces/{namespaceId}/collections", p.CollectionHandler.ListByNamespace)
+		})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			response.NotFound(w, "Route not found")
