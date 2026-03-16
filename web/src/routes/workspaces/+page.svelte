@@ -1,23 +1,24 @@
 <script lang="ts">
-	import type { PageData } from './+page';
-	import type { Workspace } from '$lib/api/types';
-	import { workspaces } from '$lib/api/client';
-	import { showToast } from '$lib/utils/toast';
-	import * as Card from '$components/ui/card/index.js';
-	import * as Table from '$components/ui/table/index.js';
-	import * as Dialog from '$components/ui/dialog/index.js';
-	import Button from '$components/ui/button/button.svelte';
-	import Input from '$components/ui/input/input.svelte';
-	import Skeleton from '$components/ui/skeleton/skeleton.svelte';
-	import AppSidebar from '$components/app-sidebar.svelte';
-	import * as Sidebar from '$components/ui/sidebar/index.js';
-	import * as Breadcrumb from '$components/ui/breadcrumb/index.js';
-	import { Separator } from '$components/ui/separator/index.js';
-	import PlusIcon from '@lucide/svelte/icons/plus';
-	import PencilIcon from '@lucide/svelte/icons/pencil';
-	import Trash2Icon from '@lucide/svelte/icons/trash-2';
-	import Loader2Icon from '@lucide/svelte/icons/loader-2';
-	import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
+	import type { PageData } from "./+page";
+	import type { Workspace } from "$lib/api/types";
+	import { workspaces } from "$lib/api/client";
+	import { showToast } from "$lib/utils/toast";
+	import * as Card from "$components/ui/card/index.js";
+	import * as Table from "$components/ui/table/index.js";
+	import * as Dialog from "$components/ui/dialog/index.js";
+	import Button from "$components/ui/button/button.svelte";
+	import Input from "$components/ui/input/input.svelte";
+	import Skeleton from "$components/ui/skeleton/skeleton.svelte";
+	import AppSidebar from "$components/app-sidebar.svelte";
+	import * as Sidebar from "$components/ui/sidebar/index.js";
+	import * as Breadcrumb from "$components/ui/breadcrumb/index.js";
+	import { Separator } from "$components/ui/separator/index.js";
+	import PlusIcon from "@lucide/svelte/icons/plus";
+	import PencilIcon from "@lucide/svelte/icons/pencil";
+	import Trash2Icon from "@lucide/svelte/icons/trash-2";
+	import Loader2Icon from "@lucide/svelte/icons/loader-2";
+	import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
+	import { setContext } from "svelte";
 
 	let { data }: { data: PageData } = $props();
 
@@ -32,7 +33,7 @@
 	let workspaceToDelete = $state<Workspace | null>(null);
 
 	// Form states
-	let newWorkspaceName = $state('');
+	let newWorkspaceName = $state("");
 	let isSubmitting = $state(false);
 
 	// Refresh workspaces from API
@@ -45,8 +46,8 @@
 		if (response.success && response.data) {
 			workspaceList = response.data;
 		} else {
-			error = response.error || response.message || 'Failed to load workspaces';
-			showToast(error, 'error');
+			error = response.error || response.message || "Failed to load workspaces";
+			showToast(error, "error");
 		}
 
 		isLoading = false;
@@ -63,12 +64,13 @@
 
 		if (response.success && response.data) {
 			workspaceList = [...workspaceList, response.data];
-			newWorkspaceName = '';
+			newWorkspaceName = "";
 			createDialogOpen = false;
-			showToast('Workspace created successfully', 'success');
+			showToast("Workspace created successfully", "success");
 		} else {
-			error = response.error || response.message || 'Failed to create workspace';
-			showToast(error, 'error');
+			error =
+				response.error || response.message || "Failed to create workspace";
+			showToast(error, "error");
 		}
 
 		isSubmitting = false;
@@ -90,7 +92,7 @@
 		workspaceList = workspaceList.filter((w) => w.id !== toDelete.id);
 		workspaceToDelete = null;
 		deleteDialogOpen = false;
-		showToast('Workspace deleted successfully', 'success');
+		showToast("Workspace deleted successfully", "success");
 
 		isSubmitting = false;
 	}
@@ -103,10 +105,10 @@
 
 	// Format date for display
 	function formatDate(dateString: string): string {
-		return new Date(dateString).toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric'
+		return new Date(dateString).toLocaleDateString("en-US", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
 		});
 	}
 </script>
@@ -119,7 +121,10 @@
 		>
 			<div class="flex items-center gap-2 px-4">
 				<Sidebar.Trigger class="-ms-1" />
-				<Separator orientation="vertical" class="me-2 data-[orientation=vertical]:h-4" />
+				<Separator
+					orientation="vertical"
+					class="me-2 data-[orientation=vertical]:h-4"
+				/>
 				<Breadcrumb.Root>
 					<Breadcrumb.List>
 						<Breadcrumb.Item>
@@ -134,11 +139,16 @@
 			<!-- Error Alert -->
 			{#if error}
 				<div
-					class="bg-destructive/10 border-destructive/20 text-destructive flex items-center gap-2 rounded-lg border p-4"
+					class="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive"
 				>
 					<AlertCircleIcon class="size-5 shrink-0" />
 					<span>{error}</span>
-					<Button variant="ghost" size="sm" class="ml-auto" onclick={() => (error = null)}>
+					<Button
+						variant="ghost"
+						size="sm"
+						class="ml-auto"
+						onclick={() => (error = null)}
+					>
 						Dismiss
 					</Button>
 				</div>
@@ -150,7 +160,7 @@
 					<div class="flex items-center justify-between">
 						<div>
 							<Card.Title>Workspaces</Card.Title>
-							<p class="text-muted-foreground mt-1 text-sm">
+							<p class="mt-1 text-sm text-muted-foreground">
 								Manage your data connection workspaces
 							</p>
 						</div>
@@ -160,11 +170,12 @@
 						</Button>
 					</div>
 				</Card.Header>
+
 				<Card.Content>
 					{#if isLoading}
 						<!-- Loading State -->
 						<div class="space-y-3">
-							{#each Array(3) as _}
+							{#each Array(3) as _ (_)}
 								<div class="flex items-center gap-4">
 									<Skeleton class="h-10 w-full" />
 								</div>
@@ -172,9 +183,13 @@
 						</div>
 					{:else if workspaceList.length === 0}
 						<!-- Empty State -->
-						<div class="text-muted-foreground flex flex-col items-center justify-center py-12">
+						<div
+							class="flex flex-col items-center justify-center py-12 text-muted-foreground"
+						>
 							<p class="text-lg font-medium">No workspaces yet</p>
-							<p class="mt-1 text-sm">Create your first workspace to get started</p>
+							<p class="mt-1 text-sm">
+								Create your first workspace to get started
+							</p>
 							<Button class="mt-4" onclick={() => (createDialogOpen = true)}>
 								<PlusIcon class="size-4" />
 								Create Workspace
@@ -191,10 +206,12 @@
 									<Table.Head class="text-right">Actions</Table.Head>
 								</Table.Row>
 							</Table.Header>
+
 							<Table.Body>
 								{#each workspaceList as workspace (workspace.id)}
 									<Table.Row>
-										<Table.Cell class="font-medium">{workspace.name}</Table.Cell>
+										<Table.Cell class="font-medium">{workspace.name}</Table.Cell
+										>
 										<Table.Cell>{formatDate(workspace.created_at)}</Table.Cell>
 										<Table.Cell>{formatDate(workspace.updated_at)}</Table.Cell>
 										<Table.Cell class="text-right">
@@ -202,6 +219,7 @@
 												<Button variant="ghost" size="icon-sm" title="Edit">
 													<PencilIcon class="size-4" />
 												</Button>
+
 												<Button
 													variant="ghost"
 													size="icon-sm"
@@ -255,7 +273,10 @@
 				>
 					Cancel
 				</Button>
-				<Button type="submit" disabled={!newWorkspaceName.trim() || isSubmitting}>
+				<Button
+					type="submit"
+					disabled={!newWorkspaceName.trim() || isSubmitting}
+				>
 					{#if isSubmitting}
 						<Loader2Icon class="size-4 animate-spin" />
 					{/if}
@@ -274,7 +295,8 @@
 		</Dialog.Header>
 		<div class="py-4">
 			<p>
-				Are you sure you want to delete <strong>{workspaceToDelete?.name}</strong
+				Are you sure you want to delete <strong
+					>{workspaceToDelete?.name}</strong
 				>? This action cannot be undone.
 			</p>
 		</div>
@@ -287,7 +309,11 @@
 			>
 				Cancel
 			</Button>
-			<Button variant="destructive" onclick={handleDelete} disabled={isSubmitting}>
+			<Button
+				variant="destructive"
+				onclick={handleDelete}
+				disabled={isSubmitting}
+			>
 				{#if isSubmitting}
 					<Loader2Icon class="size-4 animate-spin" />
 				{/if}

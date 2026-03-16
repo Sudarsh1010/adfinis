@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
+
 	"github.com/go-chi/chi/v5"
 
 	appconnection "github.com/sudarsh1010/adfinis/internal/application/connection"
@@ -56,17 +58,23 @@ func (h *ConnectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use workspaceId from URL path
-	resp, err := h.service.CreateConnection(r.Context(), &appconnection.CreateConnectionRequest{
-		WorkspaceID: workspaceID,
-		Name:        req.Name,
-		Provider:    req.Provider,
-		Endpoint:    req.Endpoint,
-		APIKey:      req.APIKey,
-		Region:      req.Region,
-	})
+	resp, err := h.service.CreateConnection(
+		r.Context(),
+		&appconnection.CreateConnectionRequest{
+			WorkspaceID: workspaceID,
+			Name:        req.Name,
+			Provider:    req.Provider,
+			Endpoint:    req.Endpoint,
+			APIKey:      req.APIKey,
+			Region:      req.Region,
+		},
+	)
 	if err != nil {
 		if errors.Is(err, domainconnection.ErrInvalidProvider) {
-			response.BadRequest(w, "Unsupported provider. Only 'milvus' is supported")
+			response.BadRequest(
+				w,
+				"Unsupported provider. Only 'milvus' is supported",
+			)
 			return
 		}
 		if errors.Is(err, domainconnection.ErrInvalidEndpoint) {
@@ -77,8 +85,10 @@ func (h *ConnectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 			response.NotFound(w, "Connection not found")
 			return
 		}
+		log.Printf("CreateConnection error: %v", err)
 		response.InternalError(w, "Failed to create connection")
 		return
+
 	}
 
 	response.Created(w, ConnectionResponse{
@@ -94,6 +104,7 @@ func (h *ConnectionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		LastConnectedAt: resp.LastConnectedAt,
 	})
 }
+
 func (h *ConnectionHandler) List(w http.ResponseWriter, r *http.Request) {
 	workspacesParam := r.URL.Query().Get("workspaceId")
 
@@ -128,7 +139,7 @@ func (h *ConnectionHandler) Test(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.TestConnection(r.Context(), id); err != nil {
-		if err == domainconnection.ErrConnectionNotFound {
+		if errors.Is(err, domainconnection.ErrConnectionNotFound) {
 			response.NotFound(w, "Connection not found")
 			return
 		}
@@ -136,5 +147,8 @@ func (h *ConnectionHandler) Test(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.OK(w, map[string]string{"message": "Connection tested successfully"})
+	response.OK(
+		w,
+		map[string]string{"message": "Connection tested successfully"},
+	)
 }

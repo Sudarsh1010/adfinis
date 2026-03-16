@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
@@ -60,14 +59,14 @@ type Service interface {
 type connectionService struct {
 	repo         Repository
 	encryptor    *crypto.Service
-	milvusClient milvus.MilvusClient
+	milvusClient milvus.Client
 }
 
 // NewService creates a new ConnectionService instance.
 func NewService(
 	repo Repository,
 	encryptor *crypto.Service,
-	milvusClient milvus.MilvusClient,
+	milvusClient milvus.Client,
 ) Service {
 	return &connectionService{
 		repo:         repo,
@@ -85,18 +84,11 @@ func (s *connectionService) CreateConnection(
 	if req.Provider != "milvus" {
 		return nil, connection.ErrInvalidProvider
 	}
-	if req.Provider != "milvus" {
-		return nil, errors.New("unsupported provider: " + req.Provider)
-	}
 
 	// Validate endpoint is a valid URL
 	if _, err := url.ParseRequestURI(req.Endpoint); err != nil {
 		return nil, connection.ErrInvalidEndpoint
 	}
-	if _, err := url.ParseRequestURI(req.Endpoint); err != nil {
-		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
-	}
-
 	// Encrypt API key before saving
 	encryptedKey, err := s.encryptor.Encrypt(req.APIKey)
 	if err != nil {

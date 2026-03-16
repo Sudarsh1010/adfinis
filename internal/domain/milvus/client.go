@@ -2,9 +2,9 @@ package milvus
 
 import "context"
 
-// MilvusClient defines the read-only interface for interacting with Milvus.
+// Client defines the read-only interface for interacting with Milvus.
 // This is a pure domain interface with no external dependencies.
-type MilvusClient interface {
+type Client interface {
 	// Connect establishes a connection to the Milvus server.
 	Connect(ctx context.Context, endpoint, apiKey string) error
 
@@ -15,7 +15,10 @@ type MilvusClient interface {
 	ListCollections(ctx context.Context) ([]CollectionInfo, error)
 
 	// DescribeCollection retrieves the schema of a specific collection.
-	DescribeCollection(ctx context.Context, name string) (*CollectionSchema, error)
+	DescribeCollection(
+		ctx context.Context,
+		name string,
+	) (*CollectionSchema, error)
 
 	// ListDatabases retrieves all databases in the Milvus server.
 	ListDatabases(ctx context.Context) ([]DatabaseInfo, error)

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/milvus-io/milvus/client/v2/milvusclient"
-
 	domainmilvus "github.com/sudarsh1010/adfinis/internal/domain/milvus"
 )
 
@@ -32,14 +31,14 @@ func (a *Adapter) Connect(ctx context.Context, endpoint, apiKey string) error {
 		APIKey:  apiKey,
 	})
 	if err != nil {
-		return fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 	defer cli.Close(ctx)
 
 	// Verify connection by listing collections
 	_, err = cli.ListCollections(ctx, milvusclient.NewListCollectionOption())
 	if err != nil {
-		return fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 
 	return nil
@@ -52,30 +51,36 @@ func (a *Adapter) Ping(ctx context.Context) error {
 		APIKey:  a.apiKey,
 	})
 	if err != nil {
-		return fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 	defer cli.Close(ctx)
 
 	// Verify connection by listing collections
 	_, err = cli.ListCollections(ctx, milvusclient.NewListCollectionOption())
 	if err != nil {
-		return fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 
 	return nil
 }
+
 // ListCollections retrieves all collections in the database.
-func (a *Adapter) ListCollections(ctx context.Context) ([]domainmilvus.CollectionInfo, error) {
+func (a *Adapter) ListCollections(
+	ctx context.Context,
+) ([]domainmilvus.CollectionInfo, error) {
 	cli, err := milvusclient.New(ctx, &milvusclient.ClientConfig{
 		Address: a.endpoint,
 		APIKey:  a.apiKey,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return nil, fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 	defer cli.Close(ctx)
 
-	collectionNames, err := cli.ListCollections(ctx, milvusclient.NewListCollectionOption())
+	collectionNames, err := cli.ListCollections(
+		ctx,
+		milvusclient.NewListCollectionOption(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list collections: %w", err)
 	}
@@ -91,19 +96,26 @@ func (a *Adapter) ListCollections(ctx context.Context) ([]domainmilvus.Collectio
 }
 
 // DescribeCollection retrieves the schema of a specific collection.
-func (a *Adapter) DescribeCollection(ctx context.Context, name string) (*domainmilvus.CollectionSchema, error) {
+func (a *Adapter) DescribeCollection(
+	ctx context.Context, name string,
+) (*domainmilvus.CollectionSchema, error) {
 	cli, err := milvusclient.New(ctx, &milvusclient.ClientConfig{
 		Address: a.endpoint,
 		APIKey:  a.apiKey,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return nil, fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 	defer cli.Close(ctx)
 
-	collection, err := cli.DescribeCollection(ctx, milvusclient.NewDescribeCollectionOption(name))
+	collection, err := cli.DescribeCollection(
+		ctx, milvusclient.NewDescribeCollectionOption(name),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to describe collection %s: %w", name, err)
+		return nil, fmt.Errorf("failed to describe collection %s: %w",
+			name,
+			err,
+		)
 	}
 
 	if collection.Schema == nil {
@@ -129,17 +141,21 @@ func (a *Adapter) DescribeCollection(ctx context.Context, name string) (*domainm
 }
 
 // ListDatabases retrieves all databases in the Milvus server.
-func (a *Adapter) ListDatabases(ctx context.Context) ([]domainmilvus.DatabaseInfo, error) {
+func (a *Adapter) ListDatabases(
+	ctx context.Context,
+) ([]domainmilvus.DatabaseInfo, error) {
 	cli, err := milvusclient.New(ctx, &milvusclient.ClientConfig{
 		Address: a.endpoint,
 		APIKey:  a.apiKey,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domainmilvus.ErrConnectionFailed, err)
+		return nil, fmt.Errorf("%w: %w", domainmilvus.ErrConnectionFailed, err)
 	}
 	defer cli.Close(ctx)
 
-	databaseNames, err := cli.ListDatabase(ctx, milvusclient.NewListDatabaseOption())
+	databaseNames, err := cli.ListDatabase(
+		ctx, milvusclient.NewListDatabaseOption(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list databases: %w", err)
 	}

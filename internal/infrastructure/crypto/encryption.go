@@ -24,7 +24,7 @@ func NewService(db *bun.DB) *Service {
 }
 
 // Encrypt encrypts plaintext using nacl/secretbox
-// Returns base64-encoded ciphertext
+// Returns base64-encoded ciphertext with nonce prepended
 func (s *Service) Encrypt(plaintext string) (string, error) {
 	// Get or create the encryption key
 	key, err := getOrCreateKey(s.db)
@@ -44,8 +44,11 @@ func (s *Service) Encrypt(plaintext string) (string, error) {
 	// Encrypt using secretbox (returns a slice)
 	ciphertext := secretbox.Seal(nil, plaintextBytes, &nonce, &key)
 
-	// Encode ciphertext to base64
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+	// Prepend nonce to ciphertext so it can be decrypted later
+	nonceAndCiphertext := append(nonce[:], ciphertext...)
+
+	// Encode to base64
+	return base64.StdEncoding.EncodeToString(nonceAndCiphertext), nil
 }
 
 // Decrypt decrypts base64-encoded ciphertext
@@ -62,7 +65,7 @@ func (s *Service) Decrypt(ciphertext string) (string, error) {
 		return "", fmt.Errorf("failed to decode ciphertext: %w", err)
 	}
 
-	if len(ciphertextBytes) < secretbox.Overhead {
+	if len(ciphertextBytes) < 24+secretbox.Overhead {
 		return "", errors.New("ciphertext too short")
 	}
 
@@ -80,20 +83,23 @@ func (s *Service) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
+// encryptionKey represents a row in the encryption_keys table
+type encryptionKey struct {
+	ID      string `bun:"id,pk"`
+	KeyData string `bun:"key_data"`
+}
+
 // getOrCreateKey retrieves an existing key from the database or creates a new one
 func getOrCreateKey(db *bun.DB) ([32]byte, error) {
 	// First try to get existing key
-	var result struct {
-		ID      string `bun:"id"`
-		KeyData string `bun:"key_data"`
-	}
+	var keyModel encryptionKey
 	err := db.NewSelect().
-		Model(&result).
+		Model(&keyModel).
 		Where("id = ?", "default").
 		Scan(context.Background())
 	if err == nil {
 		// Key exists, decode and return
-		keyBytes, err := base64.StdEncoding.DecodeString(result.KeyData)
+		keyBytes, err := base64.StdEncoding.DecodeString(keyModel.KeyData)
 		if err != nil {
 			return [32]byte{}, fmt.Errorf("failed to decode key: %w", err)
 		}
@@ -112,44 +118,7 @@ func getOrCreateKey(db *bun.DB) ([32]byte, error) {
 	}
 
 	// Key doesn't exist, create a new one
-	key, err := generateNewKey(db)
-	if err != nil {
-		return [32]byte{}, fmt.Errorf("failed to generate key: %w", err)
-	}
-
-	return key, nil
-}
-
-// getKey retrieves an existing key from the database
-func getKey(db *bun.DB) ([32]byte, error) {
-	var result struct {
-		ID      string `bun:"id"`
-		KeyData string `bun:"key_data"`
-	}
-	err := db.NewSelect().
-		Model(&result).
-		Where("id = ?", "default").
-		Scan(context.Background())
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return [32]byte{}, errors.New("key not found")
-		}
-		return [32]byte{}, fmt.Errorf("failed to query key: %w", err)
-	}
-
-	keyBytes, err := base64.StdEncoding.DecodeString(result.KeyData)
-	if err != nil {
-		return [32]byte{}, fmt.Errorf("failed to decode key: %w", err)
-	}
-
-	if len(keyBytes) != 32 {
-		return [32]byte{}, errors.New("invalid key length")
-	}
-
-	var key [32]byte
-	copy(key[:], keyBytes)
-	return key, nil
+	return generateNewKey(db)
 }
 
 // generateNewKey generates a new 32-byte encryption key and stores it in the database
@@ -161,20 +130,14 @@ func generateNewKey(db *bun.DB) ([32]byte, error) {
 	}
 
 	// Encode key to base64
-	keyBytes := key[:]
-	keyData := base64.StdEncoding.EncodeToString(keyBytes)
+	keyData := base64.StdEncoding.EncodeToString(key[:])
 
 	// Store key in database
-	_, err := db.NewInsert().
-		Model(&struct {
-			ID      string `bun:"id"`
-			KeyData string `bun:"key_data"`
-		}{
-			ID:      "default",
-			KeyData: keyData,
-		}).
-		Exec(context.Background())
-
+	keyModel := &encryptionKey{
+		ID:      "default",
+		KeyData: keyData,
+	}
+	_, err := db.NewInsert().Model(keyModel).Exec(context.Background())
 	if err != nil {
 		return [32]byte{}, fmt.Errorf("failed to store key: %w", err)
 	}

@@ -23,7 +23,7 @@ var ConnectionModule = fx.Module("connection",
 	fx.Provide(
 		fx.Annotate(
 			milvusadapter.NewAdapter,
-			fx.As(new(milvus.MilvusClient)),
+			fx.As(new(milvus.Client)),
 		),
 	),
 	// Connection service
